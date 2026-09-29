@@ -1,0 +1,41 @@
+﻿version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: first_step_backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - db_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  bot:
+    build: ./bot
+    container_name: first_step_bot
+    env_file: .env
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  webapp:
+    build: ./webapp
+    container_name: first_step_webapp
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
